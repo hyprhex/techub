@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 
 	"github.com/hyprhex/techub/api"
@@ -9,24 +8,27 @@ import (
 )
 
 func main() {
-
-	database.DBConnection()
+	
+	if err := database.OpenDatabase(); err != nil {
+		log.Printf("Error connecting to DB %v", err)
+	}
+	
+	defer database.CloseDatabse()
 
 	res, err := api.GetjobId()
-	
+
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	
+
 	for _, n := range res {
 		res, err := api.GetJobData(n)
 		if err != nil {
 			log.Fatal(err)
 		}
-
-		fmt.Println(res.Title, res.Url)
+	
+		database.InsertRecord(res.Title, res.Url)
 	}
-
 
 }

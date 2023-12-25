@@ -65,5 +65,6 @@ func GetJobData(id int) (*datatypes.Job, error) {
 
 	jobData := datatypes.Job{Title: response.Title, Url: response.URL}
 
+
 	return &jobData, nil
 }
