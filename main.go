@@ -5,9 +5,12 @@ import (
 	"log"
 
 	"github.com/hyprhex/techub/api"
+	"github.com/hyprhex/techub/database"
 )
 
 func main() {
+
+	database.DBConnection()
 
 	res, err := api.GetjobId()
 	
