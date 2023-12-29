@@ -6,7 +6,19 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"strconv"
 )
+
+type Job struct {
+	By    string `json:"by"`
+	ID    int    `json:"id"`
+	Score int    `json:"score"`
+	Text  string `json:"text"`
+	Time  int    `json:"time"`
+	Title string `json:"title"`
+	Type  string `json:"type"`
+	URL   string `json:"url"`
+}
 
 const (
 	jobUrl     = "https://hacker-news.firebaseio.com/v0/jobstories.json"
@@ -39,6 +51,31 @@ func getJobsId(url string) ([]int, error) {
 	return resIds, nil
 }
 
+func getJobData(url string, id int) (*Job, error) {
+	res, err := http.Get(fmt.Sprintf(url, strconv.Itoa(id)))
+	if err != nil {
+		return nil, err
+	}
+    
+    var jobData Job
+
+	if res.StatusCode == http.StatusOK {
+		resData, err := io.ReadAll(res.Body)
+        if err != nil {
+            return nil, err
+        }
+
+        err = json.Unmarshal(resData, &jobData)
+        if err != nil {
+            return nil, err
+        }
+	}
+
+    return &jobData, nil
+
+    
+}
+
 func main() {
 	res, err := getJobsId(jobUrl)
 	if err != nil {
@@ -46,7 +83,14 @@ func main() {
 	}
 
 	for _, v := range res {
-		fmt.Println(v)
+        
+        res, err := getJobData(jobItemUrl, v)
+        if err != nil {
+            log.Fatal(err)
+        }
+
+        fmt.Println(res)
+
 	}
 
 }
