@@ -1,12 +1,18 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
+
+	// "time"
+	"github.com/joho/godotenv"
+	_ "github.com/lib/pq"
 )
 
 type Job struct {
@@ -14,7 +20,7 @@ type Job struct {
 	ID    int    `json:"id"`
 	Score int    `json:"score"`
 	Text  string `json:"text"`
-	Time  int    `json:"time"`
+	Time  int64  `json:"time"`
 	Title string `json:"title"`
 	Type  string `json:"type"`
 	URL   string `json:"url"`
@@ -56,40 +62,80 @@ func getJobData(url string, id int) (*Job, error) {
 	if err != nil {
 		return nil, err
 	}
-    
-    var jobData Job
+
+	var jobData Job
 
 	if res.StatusCode == http.StatusOK {
 		resData, err := io.ReadAll(res.Body)
-        if err != nil {
-            return nil, err
-        }
+		if err != nil {
+			return nil, err
+		}
 
-        err = json.Unmarshal(resData, &jobData)
-        if err != nil {
-            return nil, err
-        }
+		err = json.Unmarshal(resData, &jobData)
+		if err != nil {
+			return nil, err
+		}
 	}
 
-    return &jobData, nil
+	return &jobData, nil
 
-    
+}
+
+func init() {
+	err := godotenv.Load()
+	if err != nil {
+		panic(err)
+	}
+}
+
+func conectToDB() (*sql.DB, error) {
+	var (
+		host = os.Getenv("DB_HOST")
+		port = os.Getenv("DB_PORT")
+		user = os.Getenv("DB_USER")
+		pass = os.Getenv("DB_PASS")
+		name = os.Getenv("DB_NAME")
+	)
+
+	connectionString := fmt.Sprintf("host=%s port=%s user=%s "+"password=%s dbname=%s sslmode=disable",
+		host, port, user, pass, name)
+
+	conn, err := sql.Open("postgres", connectionString)
+	if err != nil {
+		return nil, err
+	}
+
+	defer conn.Close()
+
+	err = conn.Ping()
+	if err != nil {
+		return nil, err
+	}
+
+	return conn, nil
+
 }
 
 func main() {
+	_, err := conectToDB()
+	if err != nil {
+		log.Fatal(err)
+	}
 	res, err := getJobsId(jobUrl)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	for _, v := range res {
-        
-        res, err := getJobData(jobItemUrl, v)
-        if err != nil {
-            log.Fatal(err)
-        }
 
-        fmt.Println(res)
+		res, err := getJobData(jobItemUrl, v)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		// newTime := time.Unix(res.Time, 0)
+		
+		
 
 	}
 
