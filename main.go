@@ -106,8 +106,6 @@ func conectToDB() (*sql.DB, error) {
 		return nil, err
 	}
 
-	defer conn.Close()
-
 	err = conn.Ping()
 	if err != nil {
 		return nil, err
@@ -118,10 +116,13 @@ func conectToDB() (*sql.DB, error) {
 }
 
 func main() {
-	_, err := conectToDB()
+	db, err := conectToDB()
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	defer db.Close()
+
 	res, err := getJobsId(jobUrl)
 	if err != nil {
 		log.Fatal(err)
@@ -135,12 +136,30 @@ func main() {
 		}
 
 		// newTime := time.Unix(res.Time, 0)
-	
+
 		if res.URL == "" {
 			res.URL = fmt.Sprintf(jobUrlById, strconv.Itoa(res.ID))
 		}
 
-		fmt.Println(res.URL)
+		getId := `
+		SELECT jobid from jobs where jobid = $1
+		`
+		jobid := 0
+		err = db.QueryRow(getId, res.ID).Scan(&jobid)
+
+		if res.ID != jobid {
+			sqlStatement := `
+				INSERT INTO jobs (jobid, title, url, time)
+				VALUES ($1, $2, $3, $4)
+				RETURNING id`
+			id := 0
+			err = db.QueryRow(sqlStatement, res.ID, res.Title, res.URL, res.Time).Scan(&id)
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			fmt.Println(id)
+		}
 
 	}
 
