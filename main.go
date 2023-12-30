@@ -29,6 +29,7 @@ type Job struct {
 const (
 	jobUrl     = "https://hacker-news.firebaseio.com/v0/jobstories.json"
 	jobItemUrl = "https://hacker-news.firebaseio.com/v0/item/%s.json"
+	jobUrlById = "https://news.ycombinator.com/item?id=%s"
 )
 
 func getJobsId(url string) ([]int, error) {
@@ -134,8 +135,12 @@ func main() {
 		}
 
 		// newTime := time.Unix(res.Time, 0)
-		
-		
+	
+		if res.URL == "" {
+			res.URL = fmt.Sprintf(jobUrlById, strconv.Itoa(res.ID))
+		}
+
+		fmt.Println(res.URL)
 
 	}
 
